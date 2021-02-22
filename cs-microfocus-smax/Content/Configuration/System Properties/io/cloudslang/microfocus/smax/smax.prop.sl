@@ -20,3 +20,9 @@ properties:
   - smax_password:
       value: ''
       sensitive: true
+  - proxy_host: ''
+  - proxy_port: '8080'
+  - proxy_username: ''
+  - proxy_password:
+      value: ''
+      sensitive: true
