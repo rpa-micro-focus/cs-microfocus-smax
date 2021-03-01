@@ -11,6 +11,7 @@ flow:
           io.cloudslang.microfocus.dnd._operations.artifact_http_action:
             - url: "${'/artifact/%s?userIdentifier=%s&view=propertyvalue' % (artifact_id, user_id)}"
             - method: PUT
+            - content_type: application/xml
             - body: '${artifact_xml}'
         publish:
           - updated_artifact_xml: '${return_result}'

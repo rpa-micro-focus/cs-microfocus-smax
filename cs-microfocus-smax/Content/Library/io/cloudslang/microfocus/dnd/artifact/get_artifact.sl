@@ -10,6 +10,7 @@ flow:
           io.cloudslang.microfocus.dnd._operations.artifact_http_action:
             - url: "${'/artifact/%s?userIdentifier=%s' % (artifact_id, user_id)}"
             - method: GET
+            - content_type: application/xml
         publish:
           - artifact_xml: '${return_result}'
         navigate:

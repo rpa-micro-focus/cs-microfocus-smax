@@ -1,10 +1,18 @@
+########################################################################################################################
+#!!
+#! @input file: Where to save the response
+#!!#
+########################################################################################################################
 namespace: io.cloudslang.microfocus.dnd._operations
 flow:
   name: artifact_http_action
   inputs:
     - url
     - method
+    - content_type
     - body:
+        required: false
+    - file:
         required: false
   workflow:
     - http_client_action:
@@ -22,8 +30,9 @@ flow:
             - proxy_password:
                 value: "${get_sp('io.cloudslang.microfocus.smax.proxy_password')}"
                 sensitive: true
+            - destination_file: '${file}'
             - body: '${body}'
-            - content_type: application/xml
+            - content_type: '${content_type}'
             - method: '${method}'
         publish:
           - return_result

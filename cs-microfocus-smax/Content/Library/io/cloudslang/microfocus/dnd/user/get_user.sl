@@ -7,6 +7,7 @@ flow:
           io.cloudslang.microfocus.dnd._operations.artifact_http_action:
             - url: "${'/login/%s/%s' % (get_sp('io.cloudslang.microfocus.smax.smax_tenant_id'), get_sp('io.cloudslang.microfocus.smax.smax_username'))}"
             - method: GET
+            - content_type: application/xml
         publish:
           - user_xml: '${return_result}'
         navigate:

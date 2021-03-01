@@ -1,7 +1,6 @@
 ########################################################################################################################
 #!!
 #! @description: Goes over the given components and gets values from the given properties and returns them as as or db providers.
-#!               
 #!
 #! @input properties_mapping: 'as#azure#Microsoft Azure Server Template 18.4.1#primary_ip_address|as#aws#Amazon Server Template 18.3.0#primary_ip_address|db#azure#Microsoft Azure Server Template 18.4.1 - Postgres#primary_ip_address|db#aws#Amazon RDS Template 1.4.0#cloud_resource_identifier'
 #! @input delimiter: Delimiter of values; first character delimits the various component records; the second character delimits the tokens within the component record
@@ -136,18 +135,18 @@ extensions:
       get_components:
         x: 213
         'y': 69
-      is_component_present:
-        x: 621
-        'y': 449
+      get_component_id:
+        x: 703
+        'y': 226
       is_property_given:
         x: 282
         'y': 455
       get_provider_ip:
         x: 219
         'y': 222
-      get_component_id:
-        x: 703
-        'y': 226
+      is_component_present:
+        x: 621
+        'y': 449
     results:
       SUCCESS:
         e3ba52f6-6707-983d-5f1e-70bb84cfa5c7:
