@@ -11,6 +11,7 @@ flow:
         required: false
     - smax_password:
         required: false
+        sensitive: true
   workflow:
     - http_client_action:
         do:
