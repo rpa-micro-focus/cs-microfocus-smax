@@ -49,13 +49,12 @@ flow:
           - subscription_ids
         navigate:
           - FAILURE: on_failure
-          - SUCCESS: get_millis
+          - SUCCESS: no_subscriptions
     - get_millis:
         do:
           io.cloudslang.base.datetime.get_millis: []
         publish:
           - time_now: '${time_millis}'
-          - cancel_failed: ''
         navigate:
           - SUCCESS: list_iterator
     - list_iterator:
@@ -112,6 +111,15 @@ flow:
         navigate:
           - 'TRUE': FAILURE
           - 'FALSE': SUCCESS
+    - no_subscriptions:
+        do:
+          io.cloudslang.base.utils.is_true:
+            - bool_value: '${str(len(subscription_ids) == 0)}'
+        publish:
+          - cancel_failed: ''
+        navigate:
+          - 'TRUE': SUCCESS
+          - 'FALSE': get_millis
   outputs:
     - cancel_failed: "${'' if len(cancel_failed) == 0 else cancel_failed[:-1]}"
   results:
@@ -124,8 +132,8 @@ extensions:
         x: 32
         'y': 260
       has_failed:
-        x: 612
-        'y': 81
+        x: 739
+        'y': 261
         navigate:
           99b3f49f-39b1-0d41-41a8-6da5f0a8658b:
             targetId: 11f6da47-2670-97a9-6960-bbb033d32578
@@ -134,35 +142,42 @@ extensions:
             targetId: 38c91957-d0b5-2079-7957-64c4177cf2bd
             port: 'FALSE'
       cancel_subscription:
-        x: 284
-        'y': 466
+        x: 376
+        'y': 614
       get_subscriptions:
-        x: 27
-        'y': 466
+        x: 178
+        'y': 64
       list_iterator:
-        x: 383
-        'y': 79
+        x: 485
+        'y': 261
       get_millis:
-        x: 185
-        'y': 77
+        x: 183
+        'y': 260
       get_token:
-        x: 35
-        'y': 73
+        x: 34
+        'y': 69
       get_start_time:
-        x: 557
-        'y': 264
+        x: 712
+        'y': 422
+      no_subscriptions:
+        x: 374
+        'y': 66
+        navigate:
+          e22ee3c8-ba93-dedc-2e35-75f740d8620a:
+            targetId: 38c91957-d0b5-2079-7957-64c4177cf2bd
+            port: 'TRUE'
       is_subscription_old:
-        x: 502
-        'y': 465
+        x: 602
+        'y': 614
       note_failure:
-        x: 208
-        'y': 259
+        x: 282
+        'y': 419
     results:
-      SUCCESS:
-        38c91957-d0b5-2079-7957-64c4177cf2bd:
-          x: 792
-          'y': 84
       FAILURE:
         11f6da47-2670-97a9-6960-bbb033d32578:
-          x: 790
-          'y': 258
+          x: 839
+          'y': 65
+      SUCCESS:
+        38c91957-d0b5-2079-7957-64c4177cf2bd:
+          x: 600
+          'y': 65
