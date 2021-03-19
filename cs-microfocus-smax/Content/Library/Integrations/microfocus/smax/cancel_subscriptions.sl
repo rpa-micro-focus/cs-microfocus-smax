@@ -1,6 +1,6 @@
 ########################################################################################################################
 #!!
-#! @description: Cancels all subscriptions that meet the filter criteria and are older than the given time limit (in millis).
+#! @description: Cancels all subscriptions that meet the filter criteria and are older than the given time limit (in millis). The subscriptions might have been created by any user.
 #!
 #! @input filter: Which services to cancel
 #! @input time_limit: How old subscriptions should be cancelled (in millis)
@@ -24,26 +24,26 @@ flow:
           - token
         navigate:
           - FAILURE: on_failure
-          - SUCCESS: get_subscriptions
+          - SUCCESS: get_time_now
     - get_subscriptions:
         do:
           io.cloudslang.microfocus.smax.subscription.get_subscriptions:
             - token: '${token}'
-            - layout: 'Id,DisplayLabel,StartDate,Status,Subscriber,SubscribedToService,RemoteServiceInstanceID'
-            - filter: '${filter}'
+            - layout: 'Id,DisplayLabel,StartDate,Status,Subscriber,SubscribedToService,RemoteServiceInstanceID,InitiatedByOffering'
+            - filter: "${filter+'+and+StartDate+lt+'+str(int(time_now)-int(time_limit))}"
         publish:
           - subscriptions_json
           - subscription_ids
         navigate:
           - FAILURE: on_failure
           - SUCCESS: no_subscriptions
-    - get_millis:
+    - get_time_now:
         do:
           io.cloudslang.base.datetime.get_millis: []
         publish:
           - time_now: '${time_millis}'
         navigate:
-          - SUCCESS: list_iterator
+          - SUCCESS: get_subscriptions
     - list_iterator:
         do:
           io.cloudslang.base.lists.list_iterator:
@@ -51,32 +51,18 @@ flow:
         publish:
           - subscription_id: '${result_string}'
         navigate:
-          - HAS_MORE: get_start_time
+          - HAS_MORE: get_subscriber_id
           - NO_MORE: has_failed
           - FAILURE: on_failure
-    - get_start_time:
-        do:
-          io.cloudslang.base.json.json_path_query:
-            - json_object: '${subscriptions_json}'
-            - json_path: "${\"$.entities[?(@.properties.Id == '%s')].properties.StartDate\" % subscription_id}"
-        publish:
-          - time_subscription_started: '${return_result[1:-1]}'
-        navigate:
-          - SUCCESS: is_subscription_old
-          - FAILURE: on_failure
-    - is_subscription_old:
-        do:
-          io.cloudslang.base.utils.is_true:
-            - bool_value: '${str(int(time_now) - int(time_subscription_started) > int(time_limit))}'
-        navigate:
-          - 'TRUE': get_subscriber
-          - 'FALSE': list_iterator
     - cancel_subscription:
         do:
           io.cloudslang.microfocus.smax.subscription.cancel_subscription:
             - token: '${token}'
             - user_id: '${subscriber_id}'
             - subscription_id: '${subscription_id}'
+            - description: "${'' if display_label is None else 'Cancel: '+display_label}"
+            - display_label: "${'' if display_label is None else 'Cancel: '+display_label}"
+            - offering_id: '${offering_id}'
         navigate:
           - FAILURE: note_failure
           - SUCCESS: list_iterator
@@ -106,8 +92,8 @@ flow:
           - cancel_failed: ''
         navigate:
           - 'TRUE': SUCCESS
-          - 'FALSE': get_millis
-    - get_subscriber:
+          - 'FALSE': list_iterator
+    - get_subscriber_id:
         do:
           io.cloudslang.base.json.json_path_query:
             - json_object: '${subscriptions_json}'
@@ -115,8 +101,28 @@ flow:
         publish:
           - subscriber_id: '${return_result[2:-2]}'
         navigate:
+          - SUCCESS: get_offering_id
+          - FAILURE: note_failure
+    - get_offering_id:
+        do:
+          io.cloudslang.base.json.json_path_query:
+            - json_object: '${subscriptions_json}'
+            - json_path: "${\"$.entities[?(@.properties.Id == '%s')].properties.InitiatedByOffering\" % subscription_id}"
+        publish:
+          - offering_id: '${return_result[2:-2]}'
+        navigate:
+          - SUCCESS: get_display_label
+          - FAILURE: note_failure
+    - get_display_label:
+        do:
+          io.cloudslang.base.json.json_path_query:
+            - json_object: '${subscriptions_json}'
+            - json_path: "${\"$.entities[?(@.properties.Id == '%s')].properties.DisplayLabel\" % subscription_id}"
+        publish:
+          - display_label: '${return_result[2:-2]}'
+        navigate:
           - SUCCESS: cancel_subscription
-          - FAILURE: on_failure
+          - FAILURE: cancel_subscription
   outputs:
     - cancel_failed: "${'' if len(cancel_failed) == 0 else cancel_failed[:-1]}"
   results:
@@ -126,8 +132,8 @@ extensions:
   graph:
     steps:
       has_failed:
-        x: 739
-        'y': 261
+        x: 715
+        'y': 262
         navigate:
           99b3f49f-39b1-0d41-41a8-6da5f0a8658b:
             targetId: 11f6da47-2670-97a9-6960-bbb033d32578
@@ -136,45 +142,45 @@ extensions:
             targetId: 38c91957-d0b5-2079-7957-64c4177cf2bd
             port: 'FALSE'
       cancel_subscription:
-        x: 302
-        'y': 613
+        x: 313
+        'y': 605
+      get_subscriber_id:
+        x: 735
+        'y': 416
+      get_offering_id:
+        x: 680
+        'y': 608
+      get_time_now:
+        x: 34
+        'y': 259
       get_subscriptions:
-        x: 178
-        'y': 66
+        x: 219
+        'y': 259
+      get_display_label:
+        x: 507
+        'y': 633
       list_iterator:
         x: 485
         'y': 261
-      get_millis:
-        x: 183
-        'y': 260
       get_token:
         x: 34
         'y': 69
-      get_subscriber:
-        x: 478
-        'y': 619
-      get_start_time:
-        x: 712
-        'y': 422
       no_subscriptions:
-        x: 374
-        'y': 66
+        x: 219
+        'y': 82
         navigate:
           e22ee3c8-ba93-dedc-2e35-75f740d8620a:
             targetId: 38c91957-d0b5-2079-7957-64c4177cf2bd
             port: 'TRUE'
-      is_subscription_old:
-        x: 658
-        'y': 619
       note_failure:
         x: 221
         'y': 415
     results:
       FAILURE:
         11f6da47-2670-97a9-6960-bbb033d32578:
-          x: 839
-          'y': 65
+          x: 711
+          'y': 80
       SUCCESS:
         38c91957-d0b5-2079-7957-64c4177cf2bd:
-          x: 600
-          'y': 65
+          x: 486
+          'y': 82

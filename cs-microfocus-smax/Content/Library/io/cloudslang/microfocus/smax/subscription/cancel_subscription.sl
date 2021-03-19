@@ -1,9 +1,12 @@
 ########################################################################################################################
 #!!
-#! @description: Cancels the given subscription.
+#! @description: Cancels the given subscription (belonging to any user).
 #!
 #! @input user_id: ID of a user owning the subscription
 #! @input subscription_id: Subscription ID to be cancelled
+#! @input offering_id: ID of the Offering ID assigned to this subscription
+#! @input display_label: Display label of the cancel request
+#! @input description: Description of the cancel request
 #!!#
 ########################################################################################################################
 namespace: io.cloudslang.microfocus.smax.subscription
@@ -13,34 +16,48 @@ flow:
     - token
     - user_id
     - subscription_id
+    - offering_id
+    - display_label:
+        required: false
+    - description:
+        required: false
   workflow:
-    - smax_http_action:
+    - create_entity:
         do:
-          io.cloudslang.microfocus.smax._operations.smax_http_action:
-            - url: "${'/rest/%s/ess/subscription/cancelSubscription/%s/%s' % (get_sp('io.cloudslang.microfocus.smax.smax_tenant_id'), user_id, subscription_id)}"
-            - method: PUT
+          io.cloudslang.microfocus.smax.entity.create_entity:
             - token: '${token}'
-            - body: "${'{id: \"%s\", userId: \"%s\"}' % (subscription_id, user_id)}"
+            - entity_type: Request
+            - entity_properties: "${'''\n{\n    \"SubscriptionActionType\": \"Cancel\",\n    \"DataDomains\": [\"Public\"],\n    \"Description\": \"%s\",\n    \"DisplayLabel\": \"%s\",\n    \"RegisteredForSubscription\": \"%s\",\n    \"RequestedByPerson\": \"%s\",\n    \"RequestedForPerson\": \"%s\",\n    \"RequestsOffering\": \"%s\"\n}\n''' % (\\\n    'Cancel: '+subscription_id if description is None else description,\\\n    'Cancel: '+subscription_id if display_label is None else display_label,\\\n    subscription_id,user_id,user_id, offering_id\n)}"
         publish:
           - return_result
+          - error_message
+          - status_code
+          - return_code
+          - response_headers
         navigate:
           - FAILURE: on_failure
           - SUCCESS: SUCCESS
+  outputs:
+    - return_result: '${return_result}'
+    - error_message: '${error_message}'
+    - status_code: '${status_code}'
+    - return_code: '${return_code}'
+    - response_headers: '${response_headers}'
   results:
-    - FAILURE
     - SUCCESS
+    - FAILURE
 extensions:
   graph:
     steps:
-      smax_http_action:
-        x: 73
-        'y': 93
+      create_entity:
+        x: 70
+        'y': 111
         navigate:
-          628cc70a-9395-2ad6-9440-ef858b400d24:
+          51c9b377-f938-e22f-2017-460fd72a9d5c:
             targetId: 7950213f-3eb5-a4c5-55aa-6183a1383a04
             port: SUCCESS
     results:
       SUCCESS:
         7950213f-3eb5-a4c5-55aa-6183a1383a04:
           x: 272
-          'y': 93
+          'y': 112
