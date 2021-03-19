@@ -1,9 +1,8 @@
 ########################################################################################################################
 #!!
-#! @description: Cancels all subscriptions that contains the given text, are in the given state and older than the given time limit (in millis).
+#! @description: Cancels all subscriptions that meet the filter criteria and are older than the given time limit (in millis).
 #!
-#! @input statuses: Comma delimited list of statuses (no spaces in between): Paused, Active, Expired, Cancelled, Pending, Terminated, Retired
-#! @input filter_text: Which text the subsciption name should start with
+#! @input filter: Which services to cancel
 #! @input time_limit: How old subscriptions should be cancelled (in millis)
 #!
 #! @output cancel_failed: List of subscription IDs whose cancellation failed
@@ -15,9 +14,7 @@ namespace: Integrations.microfocus.smax
 flow:
   name: cancel_subscriptions
   inputs:
-    - statuses: 'Active,Terminated'
-    - filter_text:
-        required: false
+    - filter: "RemoteServiceInstanceID!=null+and+(Status='Terminated'+or+Status='Active')"
     - time_limit: '90000000'
   workflow:
     - get_token:
@@ -27,23 +24,13 @@ flow:
           - token
         navigate:
           - FAILURE: on_failure
-          - SUCCESS: get_me
-    - get_me:
-        do:
-          io.cloudslang.microfocus.smax.person.get_me:
-            - token: '${token}'
-        publish:
-          - user_id
-        navigate:
-          - FAILURE: on_failure
           - SUCCESS: get_subscriptions
     - get_subscriptions:
         do:
           io.cloudslang.microfocus.smax.subscription.get_subscriptions:
             - token: '${token}'
-            - user_id: '${user_id}'
-            - search_text: '${filter_text}'
-            - statuses: '${statuses}'
+            - layout: 'Id,DisplayLabel,StartDate,Status,Subscriber,SubscribedToService,RemoteServiceInstanceID'
+            - filter: '${filter}'
         publish:
           - subscriptions_json
           - subscription_ids
@@ -82,13 +69,13 @@ flow:
           io.cloudslang.base.utils.is_true:
             - bool_value: '${str(int(time_now) - int(time_subscription_started) > int(time_limit))}'
         navigate:
-          - 'TRUE': cancel_subscription
+          - 'TRUE': get_subscriber
           - 'FALSE': list_iterator
     - cancel_subscription:
         do:
           io.cloudslang.microfocus.smax.subscription.cancel_subscription:
             - token: '${token}'
-            - user_id: '${user_id}'
+            - user_id: '${subscriber_id}'
             - subscription_id: '${subscription_id}'
         navigate:
           - FAILURE: note_failure
@@ -120,6 +107,16 @@ flow:
         navigate:
           - 'TRUE': SUCCESS
           - 'FALSE': get_millis
+    - get_subscriber:
+        do:
+          io.cloudslang.base.json.json_path_query:
+            - json_object: '${subscriptions_json}'
+            - json_path: "${\"$.entities[?(@.properties.Id == '%s')].properties.Subscriber\" % subscription_id}"
+        publish:
+          - subscriber_id: '${return_result[2:-2]}'
+        navigate:
+          - SUCCESS: cancel_subscription
+          - FAILURE: on_failure
   outputs:
     - cancel_failed: "${'' if len(cancel_failed) == 0 else cancel_failed[:-1]}"
   results:
@@ -128,9 +125,6 @@ flow:
 extensions:
   graph:
     steps:
-      get_me:
-        x: 32
-        'y': 260
       has_failed:
         x: 739
         'y': 261
@@ -142,11 +136,11 @@ extensions:
             targetId: 38c91957-d0b5-2079-7957-64c4177cf2bd
             port: 'FALSE'
       cancel_subscription:
-        x: 376
-        'y': 614
+        x: 302
+        'y': 613
       get_subscriptions:
         x: 178
-        'y': 64
+        'y': 66
       list_iterator:
         x: 485
         'y': 261
@@ -156,6 +150,9 @@ extensions:
       get_token:
         x: 34
         'y': 69
+      get_subscriber:
+        x: 478
+        'y': 619
       get_start_time:
         x: 712
         'y': 422
@@ -167,11 +164,11 @@ extensions:
             targetId: 38c91957-d0b5-2079-7957-64c4177cf2bd
             port: 'TRUE'
       is_subscription_old:
-        x: 602
-        'y': 614
+        x: 658
+        'y': 619
       note_failure:
-        x: 282
-        'y': 419
+        x: 221
+        'y': 415
     results:
       FAILURE:
         11f6da47-2670-97a9-6960-bbb033d32578:

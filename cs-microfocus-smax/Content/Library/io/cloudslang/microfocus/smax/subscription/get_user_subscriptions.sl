@@ -1,9 +1,10 @@
 ########################################################################################################################
 #!!
-#! @description: Retrieves list of subscriptions.
+#! @description: Retrieves list of subscriptions belonging to the given user, containing the given text and being in one of the given statuses.
 #!
-#! @input layout: Comma separated list of which fields to return; e.g. Id,DisplayLabel,StartDate,Status,Subscriber,SubscribedToService,RemoteServiceInstanceID
-#! @input filter: Which subscriptions to filter; e.g. RemoteServiceInstanceID!=null+and+(Status='Terminated'+or+Status='Active')
+#! @input user_id: User ID the subscriptions belong to
+#! @input search_text: Filter subscriptions containing this piece of text
+#! @input statuses: Comma delimited list of statuses (no spaces in between): Paused, Active, Expired, Cancelled, Pending, Terminated, Retired
 #!
 #! @output subscriptions_json: JSON document describing the subscriptions
 #! @output subscription_ids: Comma delimited list of subscription IDs
@@ -11,20 +12,30 @@
 ########################################################################################################################
 namespace: io.cloudslang.microfocus.smax.subscription
 flow:
-  name: get_subscriptions
+  name: get_user_subscriptions
   inputs:
     - token
-    - layout:
+    - user_id:
         required: true
-    - filter:
+    - search_text:
         required: false
+    - statuses:
+        required: true
   workflow:
     - smax_http_action:
         do:
           io.cloudslang.microfocus.smax._operations.smax_http_action:
-            - url: "${\"/rest/%s/ems/Subscription?layout=%s%s\" % (get_sp('io.cloudslang.microfocus.smax.smax_tenant_id'), layout, \\\n'' if filter is None else '&filter='+filter)}"
-            - method: GET
+            - url: "${'/rest/%s/ess/subscription/getSubscriptionList' % get_sp('io.cloudslang.microfocus.smax.smax_tenant_id')}"
+            - method: POST
             - token: '${token}'
+            - body: |-
+                ${'''
+                {
+                    "searchText":"%s",
+                    "userId":"%s",
+                    "status":%s
+                }
+                ''' % ('' if search_text is None else search_text, user_id, '["'+'","'.join(statuses.split(','))+'"]')}
         publish:
           - subscriptions_json: '${return_result}'
         navigate:
