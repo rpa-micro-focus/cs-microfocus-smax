@@ -142,14 +142,14 @@ extensions:
             targetId: 38c91957-d0b5-2079-7957-64c4177cf2bd
             port: 'FALSE'
       cancel_subscription:
-        x: 313
-        'y': 605
+        x: 230
+        'y': 445
       get_subscriber_id:
-        x: 735
-        'y': 416
+        x: 718
+        'y': 443
       get_offering_id:
-        x: 680
-        'y': 608
+        x: 646
+        'y': 670
       get_time_now:
         x: 34
         'y': 259
@@ -157,8 +157,8 @@ extensions:
         x: 219
         'y': 259
       get_display_label:
-        x: 507
-        'y': 633
+        x: 357
+        'y': 670
       list_iterator:
         x: 485
         'y': 261
@@ -173,8 +173,8 @@ extensions:
             targetId: 38c91957-d0b5-2079-7957-64c4177cf2bd
             port: 'TRUE'
       note_failure:
-        x: 221
-        'y': 415
+        x: 484
+        'y': 479
     results:
       FAILURE:
         11f6da47-2670-97a9-6960-bbb033d32578:
